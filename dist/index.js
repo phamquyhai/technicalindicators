@@ -4211,6 +4211,109 @@ function crossDown(input) {
     return result;
 }
 
+class CrossOver extends Indicator {
+    constructor(input) {
+        super(input);
+        var crossUp$$1 = new CrossUp({ lineA: input.lineA, lineB: input.lineB });
+        var crossDown$$1 = new CrossDown({ lineA: input.lineA, lineB: input.lineB });
+        const genFn = (function* () {
+            var current = yield;
+            var result = false;
+            var first = true;
+            while (true) {
+                var nextUp = crossUp$$1.nextValue(current.valueA, current.valueB);
+                var nextDown = crossDown$$1.nextValue(current.valueA, current.valueB);
+                result = nextUp || nextDown;
+                if (first)
+                    result = false;
+                first = false;
+                current = yield result;
+            }
+        });
+        this.generator = genFn();
+        this.generator.next();
+        var resultA = crossUp$$1.getResult();
+        var resultB = crossDown$$1.getResult();
+        this.result = resultA.map((a, index) => {
+            if (index === 0)
+                return false;
+            return !!(a || resultB[index]);
+        });
+    }
+    static reverseInputs(input) {
+        if (input.reversedInput) {
+            input.lineA ? input.lineA.reverse() : undefined;
+            input.lineB ? input.lineB.reverse() : undefined;
+        }
+    }
+    nextValue(valueA, valueB) {
+        return this.generator.next({
+            valueA: valueA,
+            valueB: valueB
+        }).value;
+    }
+    ;
+}
+CrossOver.calculate = crossOver;
+function crossOver(input) {
+    Indicator.reverseInputs(input);
+    var result = new CrossOver(input).result;
+    if (input.reversedInput) {
+        result.reverse();
+    }
+    Indicator.reverseInputs(input);
+    return result;
+}
+
+class CrossUnder extends Indicator {
+    constructor(input) {
+        super(input);
+        var crossDown$$1 = new CrossDown({ lineA: input.lineA, lineB: input.lineB });
+        const genFn = (function* () {
+            var current = yield;
+            var result = false;
+            var first = true;
+            while (true) {
+                var nextDown = crossDown$$1.nextValue(current.valueA, current.valueB);
+                result = !!nextDown;
+                if (first)
+                    result = false;
+                first = false;
+                current = yield result;
+            }
+        });
+        this.generator = genFn();
+        this.generator.next();
+        this.result = crossDown$$1.getResult().map((down, index) => {
+            if (index === 0)
+                return false;
+            return !!down;
+        });
+    }
+    static reverseInputs(input) {
+        if (input.reversedInput) {
+            input.lineA ? input.lineA.reverse() : undefined;
+            input.lineB ? input.lineB.reverse() : undefined;
+        }
+    }
+    nextValue(valueA, valueB) {
+        return this.generator.next({
+            valueA: valueA,
+            valueB: valueB
+        }).value;
+    }
+}
+CrossUnder.calculate = crossUnder;
+function crossUnder(input) {
+    Indicator.reverseInputs(input);
+    var result = new CrossUnder(input).result;
+    if (input.reversedInput) {
+        result.reverse();
+    }
+    Indicator.reverseInputs(input);
+    return result;
+}
+
 function getAvailableIndicators () {
   let AvailableIndicators   = [];
   AvailableIndicators.push('sma');
@@ -4429,6 +4532,10 @@ exports.crossUp = crossUp;
 exports.CrossUp = CrossUp;
 exports.crossDown = crossDown;
 exports.CrossDown = CrossDown;
+exports.crossOver = crossOver;
+exports.CrossOver = CrossOver;
+exports.crossUnder = crossUnder;
+exports.CrossUnder = CrossUnder;
 exports.setConfig = setConfig;
 exports.getConfig = getConfig;
 //# sourceMappingURL=index.js.map
